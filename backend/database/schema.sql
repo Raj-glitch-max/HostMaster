@@ -13,6 +13,13 @@ CREATE TABLE users (
   aws_access_key_encrypted TEXT,
   aws_secret_key_encrypted TEXT,
   aws_region VARCHAR(50) DEFAULT 'us-east-1',
+  tier VARCHAR(20) DEFAULT 'free', -- free, professional, enterprise
+  budget DECIMAL(10, 2) DEFAULT 0, -- Monthly budget in USD
+  alert_email BOOLEAN DEFAULT TRUE,
+  alert_slack BOOLEAN DEFAULT FALSE,
+  alert_sms BOOLEAN DEFAULT FALSE,
+  slack_webhook_url TEXT,
+  phone_number VARCHAR(20),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
