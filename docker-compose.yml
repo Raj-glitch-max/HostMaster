@@ -15,22 +15,22 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # Redis (for caching + Bull queue)
+  # Redis (for caching + Bull queue) - NO AUTH FOR DEVELOPMENT
   redis:
     image: redis:7-alpine
     container_name: hostmaster-redis
     ports:
       - "6379:6379"
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass ""
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -52,6 +52,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: production_secret_change_this
+      ENCRYPTION_KEY: 07b7269f50571b43a92f64b8552367036525042b8834ee6334b6eaf25e2460c7
     ports:
       - "3000:3000"
     depends_on:
@@ -84,6 +85,7 @@ services:
       DB_PASSWORD: hostmaster123
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      ENCRYPTION_KEY: 07b7269f50571b43a92f64b8552367036525042b8834ee6334b6eaf25e2460c7
     depends_on:
       postgres:
         condition: service_healthy
