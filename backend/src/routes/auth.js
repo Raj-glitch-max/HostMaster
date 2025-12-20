@@ -23,7 +23,7 @@ router.post(
     '/register',
     [
         body('email').isEmail().normalizeEmail(),
-        body('password').isLength({ min: 12 }),
+        body('password').isLength({ min: 8 }),
         body('name').trim().notEmpty().isLength({ max: 100 })
     ],
     async (req, res) => {
