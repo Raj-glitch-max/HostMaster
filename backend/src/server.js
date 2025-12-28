@@ -20,6 +20,9 @@ if (process.env.NODE_ENV !== 'production' || process.env.START_WORKERS === 'true
 const authRoutes = require('./routes/auth');
 const resourceRoutes = require('./routes/resources');
 const costRoutes = require('./routes/costs');
+const reportRoutes = require('./routes/reports');
+const recommendationRoutes = require('./routes/recommendations');
+const alertRoutes = require('./routes/alerts');
 const healthRoutes = require('./routes/health');
 const { metricsRouter } = require('./utils/metrics');
 
@@ -49,6 +52,9 @@ app.use(metricsRouter);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/resources', resourceRoutes);
 app.use('/api/v1/costs', costRoutes);
+app.use('/api/v1/reports', reportRoutes);
+app.use('/api/v1/recommendations', recommendationRoutes);
+app.use('/api/v1/alerts', alertRoutes);
 
 // 404 handler
 app.use((req, res) => {
