@@ -15,35 +15,45 @@ export default function DashboardLayout({
     const [user, setUser] = useState<any>(null)
 
     useEffect(() => {
-        const token = localStorage.getItem('token')
-        const userData = localStorage.getItem('user')
+        // TEMPORARILY DISABLED FOR SCREENSHOTS
+        // const token = localStorage.getItem('token')
+        // const userData = localStorage.getItem('user')
 
-        if (!token) {
-            router.push('/login')
-            return
-        }
+        // if (!token) {
+        //     router.push('/login')
+        //     return
+        // }
 
-        if (userData) {
-            setUser(JSON.parse(userData))
-        }
+        // if (userData) {
+        //     setUser(JSON.parse(userData))
+        // }
+
+        // Mock user for screenshots
+        setUser({
+            name: 'Demo User',
+            email: 'demo@hostmaster.io',
+            tier: 'professional'
+        })
     }, [router])
 
     const handleLogout = () => {
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
-        router.push('/login')
+        // DISABLED FOR SCREENSHOTS
+        // localStorage.removeItem('token')
+        // localStorage.removeItem('user')
+        // router.push('/login')
     }
 
-    if (!user) {
-        return (
-            <div className="flex h-screen items-center justify-center bg-background">
-                <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <p className="mt-4 text-muted-foreground">Loading...</p>
-                </div>
-            </div>
-        )
-    }
+    // DISABLED FOR SCREENSHOTS - Always show dashboard
+    // if (!user) {
+    //     return (
+    //         <div className="flex h-screen items-center justify-center bg-background">
+    //             <div className="text-center">
+    //                 <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+    //                 <p className="mt-4 text-muted-foreground">Loading...</p>
+    //             </div>
+    //         </div>
+    //     )
+    // }
 
     return (
         <div className="flex h-screen bg-background">

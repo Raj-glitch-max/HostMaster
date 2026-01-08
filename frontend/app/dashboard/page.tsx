@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { LineChart, Line, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import api from '@/lib/api'
 
 export default function DashboardPage() {
     const [stats, setStats] = useState<any>(null)
@@ -14,14 +15,20 @@ export default function DashboardPage() {
 
     const fetchDashboardStats = async () => {
         try {
-            const token = localStorage.getItem('token')
-            const response = await fetch('http://localhost:3000/api/v1/costs', {
-                headers: { 'Authorization': `Bearer ${token}` }
+            // Fetch all data in parallel
+            const [costsData, resourcesData, recommendationsData] = await Promise.all([
+                api.getCosts(),
+                api.getResources(),
+                api.getRecommendations()
+            ])
+
+            setStats({
+                costs: costsData,
+                resources: resourcesData,
+                recommendations: recommendationsData.recommendations || []
             })
-            const data = await response.json()
-            setStats(data)
         } catch (error) {
-            console.error('Error:', error)
+            console.error('Error fetching dashboard data:', error)
         } finally {
             setLoading(false)
         }
@@ -64,9 +71,10 @@ export default function DashboardPage() {
         )
     }
 
-    const currentMonthCost = stats?.currentMonth?.total || 156.45
-    const forecastNextMonth = stats?.forecast?.nextMonth || 165.20
-    const potentialSavings = stats?.recommendations?.reduce((sum: number, rec: any) => sum + rec.savings, 0) || 32.66
+    const currentMonthCost = stats?.costs?.currentMonth?.total || 0
+    const forecastNextMonth = stats?.costs?.forecast?.nextMonth || 0
+    const potentialSavings = stats?.recommendations?.reduce((sum: number, rec: any) => sum + rec.savings, 0) || 0
+    const totalResources = (stats?.resources?.ec2Instances?.length || 0) + (stats?.resources?.rdsInstances?.length || 0)
 
     return (
         <div className="space-y-6">
@@ -124,11 +132,11 @@ export default function DashboardPage() {
                 <Card className="bg-card border-white/10 hover:border-white/20 transition-all">
                     <CardHeader className="pb-2">
                         <CardDescription>Resources</CardDescription>
-                        <CardTitle className="text-3xl font-bold">{(stats?.ec2Instances?.length || 1) + (stats?.rdsInstances?.length || 1)}</CardTitle>
+                        <CardTitle className="text-3xl font-bold">{totalResources}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <span>Across 2 services</span>
+                            <span>EC2: {stats?.resources?.ec2Instances?.length || 0}, RDS: {stats?.resources?.rdsInstances?.length || 0}</span>
                         </div>
                     </CardContent>
                 </Card>
