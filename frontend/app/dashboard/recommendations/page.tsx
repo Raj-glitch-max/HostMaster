@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import api from '@/lib/api'
 
 export default function RecommendationsPage() {
     const [recommendations, setRecommendations] = useState<any[]>([])
@@ -14,14 +15,8 @@ export default function RecommendationsPage() {
 
     const fetchRecommendations = async () => {
         try {
-            const token = localStorage.getItem('token')
-            const response = await fetch('http://localhost:3000/api/v1/costs', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-
-            const data = await response.json()
+            setLoading(true)
+            const data = await api.getRecommendations()
             setRecommendations(data.recommendations || [])
         } catch (error) {
             console.error('Error fetching recommendations:', error)

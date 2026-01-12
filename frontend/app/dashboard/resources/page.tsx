@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import api from '@/lib/api'
 
 export default function ResourcesPage() {
     const [resources, setResources] = useState<any>(null)
@@ -15,14 +16,8 @@ export default function ResourcesPage() {
 
     const fetchResources = async () => {
         try {
-            const token = localStorage.getItem('token')
-            const response = await fetch('http://localhost:3000/api/v1/resources', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-
-            const data = await response.json()
+            setLoading(true)
+            const data = await api.getResources()
             setResources(data)
         } catch (error) {
             console.error('Error fetching resources:', error)
@@ -143,8 +138,8 @@ export default function ResourcesPage() {
                                     <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
                                         <td className="py-3 px-4">
                                             <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${resource.type === 'EC2'
-                                                    ? 'bg-blue-100 text-blue-700'
-                                                    : 'bg-purple-100 text-purple-700'
+                                                ? 'bg-blue-100 text-blue-700'
+                                                : 'bg-purple-100 text-purple-700'
                                                 }`}>
                                                 {resource.type}
                                             </span>
@@ -153,8 +148,8 @@ export default function ResourcesPage() {
                                         <td className="py-3 px-4">{resource.type === 'EC2' ? resource.type : resource.type}</td>
                                         <td className="py-3 px-4">
                                             <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${resource.state === 'running' || resource.multiAZ
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : 'bg-gray-100 text-gray-700'
+                                                ? 'bg-green-100 text-green-700'
+                                                : 'bg-gray-100 text-gray-700'
                                                 }`}>
                                                 <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
                                                 {resource.state || (resource.multiAZ ? 'Multi-AZ' : 'Single-AZ')}
