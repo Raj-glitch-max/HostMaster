@@ -1,20 +1,28 @@
 const express = require('express');
 const router = express.Router();
 const { query } = require('../config/database');
+const { cache } = require('../config/redis');
 const AWSScanner = require('../services/awsScanner');
+const { addScanJob, getScanJobStatus } = require('../services/queue');
 const logger = require('../utils/logger');
 
 /**
  * @route   GET /api/v1/resources
- * @desc    Get all AWS resources - REAL DATABASE
+ * @desc    Get all AWS resources - WITH CACHING
  * @access  Private
  */
 router.get('/', async (req, res) => {
     try {
-        // TODO: Add auth middleware to get userId from JWT
-        const userId = 'demo-user-id'; // For now, hardcoded
+        const userId = req.user?.id || 'demo-user-id'; // TODO: Get from JWT middleware
 
         logger.info('Fetching AWS resources', { userId });
+
+        // Check cache first
+        const cached = await cache.getUserDashboard(userId);
+        if (cached) {
+            logger.info('Serving from cache', { userId });
+            return res.json(cached);
+        }
 
         // Get from database
         const result = await query(
@@ -33,7 +41,7 @@ router.get('/', async (req, res) => {
 
         const totalCost = result.rows.reduce((sum, r) => sum + parseFloat(r.monthly_cost || 0), 0);
 
-        res.json({
+        const response = {
             ec2Instances: ec2Instances.map(r => ({
                 id: r.resource_id,
                 type: r.instance_type,
@@ -51,7 +59,12 @@ router.get('/', async (req, res) => {
                 monthlyCost: parseFloat(r.monthly_cost)
             })),
             totalMonthlyCost: totalCost.toFixed(2)
-        });
+        };
+
+        // Cache for 30 minutes
+        await cache.setUserDashboard(userId, response);
+
+        res.json(response);
     } catch (error) {
         logger.error('Error fetching resources', { error: error.message });
         res.status(500).json({ error: 'Failed to fetch resources' });
@@ -60,38 +73,73 @@ router.get('/', async (req, res) => {
 
 /**
  * @route   POST /api/v1/resources/scan
- * @desc    Trigger AWS scan - REAL AWS SDK
+ * @desc    Trigger AWS scan - QUEUED via Bull
  * @access  Private
  */
 router.post('/scan', async (req, res) => {
     try {
-        const userId = 'demo-user-id';
+        const userId = req.user?.id || 'demo-user-id';
         const { accessKeyId, secretAccessKey, region } = req.body;
 
         if (!accessKeyId || !secretAccessKey) {
             return res.status(400).json({ error: 'AWS credentials required' });
         }
 
-        logger.info('Starting AWS scan', { userId, region });
+        logger.info('Triggering AWS scan', { userId, region });
 
-        // Initialize scanner
-        const scanner = new AWSScanner(accessKeyId, secretAccessKey, region || 'us-east-1');
+        // Create scan job record
+        const scanJobResult = await query(
+            `INSERT INTO scan_jobs (user_id, status) 
+       VALUES ($1, 'pending') 
+       RETURNING id`,
+            [userId]
+        );
 
-        // Scan in background
-        setImmediate(async () => {
-            try {
-                const ec2 = await scanner.scanEC2Instances(userId);
-                const rds = await scanner.scanRDSInstances(userId);
-                logger.info('Scan completed', { userId, ec2Count: ec2.length, rdsCount: rds.length });
-            } catch (error) {
-                logger.error('Scan failed', { error: error.message });
-            }
+        const scanJobId = scanJobResult.rows[0].id;
+
+        // Queue the scan job
+        const job = await addScanJob(userId, {
+            userId,
+            accountId: userId, // Simplified - in real app, separate account table
+            accessKeyId,
+            secretAccessKey,
+            region: region || 'us-east-1',
+            scanJobId
         });
 
-        res.json({ message: 'Scan started', status: 'running' });
+        logger.info('Scan job queued', { jobId: job.id, scanJobId, userId });
+
+        res.json({
+            message: 'Scan queued successfully',
+            jobId: job.id,
+            scanJobId,
+            status: 'pending'
+        });
     } catch (error) {
         logger.error('Error starting scan', { error: error.message });
         res.status(500).json({ error: 'Failed to start scan' });
+    }
+});
+
+/**
+ * @route   GET /api/v1/resources/scan/:jobId
+ * @desc    Get scan job status
+ * @access  Private
+ */
+router.get('/scan/:jobId', async (req, res) => {
+    try {
+        const { jobId } = req.params;
+
+        const status = await getScanJobStatus(jobId);
+
+        if (!status) {
+            return res.status(404).json({ error: 'Job not found' });
+        }
+
+        res.json(status);
+    } catch (error) {
+        logger.error('Error getting scan status', { error: error.message });
+        res.status(500).json({ error: 'Failed to get scan status' });
     }
 });
 

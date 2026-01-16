@@ -1,18 +1,28 @@
 const express = require('express');
 const router = express.Router();
 const { query } = require('../config/database');
+const { cache } = require('../config/redis');
 const recommendationEngine = require('../services/recommendationEngine');
+const alertSystem = require('../services/alertSystem');
 const logger = require('../utils/logger');
 
 /**
  * @route   GET /api/v1/costs
- * @desc    Get cost analysis - REAL DATABASE
+ * @desc    Get cost analysis - WITH CACHING AND ALERTS
  */
 router.get('/', async (req, res) => {
     try {
-        const userId = 'demo-user-id'; // TODO: Get from JWT
+        const userId = req.user?.id || 'demo-user-id';
 
         logger.info('Fetching cost analysis', { userId });
+
+        // Check cache first
+        const cacheKey = `costs:${userId}`;
+        const cached = await cache.getAccountCost(userId);
+        if (cached) {
+            logger.info('Serving costs from cache', { userId });
+            return res.json(cached);
+        }
 
         // Get current month costs from database
         const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM
@@ -62,23 +72,35 @@ router.get('/', async (req, res) => {
         const nextMonth = currentMonthData.total * 1.05;
         const threeMonths = currentMonthData.total * 3 * 1.05;
 
-        res.json({
+        const response = {
             currentMonth: currentMonthData,
             forecast: {
                 nextMonth: parseFloat(nextMonth.toFixed(2)),
                 threeMonths: parseFloat(threeMonths.toFixed(2))
             },
             recommendations: recommendations.map(r => ({
+                id: r.id,
                 type: r.type,
                 resource: r.resource_name,
                 action: r.action,
                 currentCost: parseFloat(r.current_cost),
                 recommendedCost: parseFloat(r.recommended_cost),
-                savings: parseFloat(r.savings)
+                savings: parseFloat(r.savings),
+                confidenceScore: parseFloat(r.confidence_score)
             }))
+        };
+
+        // Cache for 1 hour
+        await cache.setAccountCost(userId, response);
+
+        // Check for alerts (async, don't wait)
+        alertSystem.checkAlerts(userId).catch(err => {
+            logger.error('Alert check failed', { error: err.message, userId });
         });
+
+        res.json(response);
     } catch (error) {
-        logger.error('Error fetching costs', { error: error.message });
+        logger.error('Error fetching costs', { error: error.message, stack: error.stack });
         res.status(500).json({ error: 'Failed to fetch cost data' });
     }
 });
@@ -89,18 +111,63 @@ router.get('/', async (req, res) => {
  */
 router.post('/generate-recommendations', async (req, res) => {
     try {
-        const userId = 'demo-user-id';
+        const userId = req.user?.id || 'demo-user-id';
+
+        logger.info('Generating recommendations', { userId });
 
         const recommendations = await recommendationEngine.generateRecommendations(userId);
+
+        // Invalidate costs cache
+        await cache.invalidateUser(userId);
 
         res.json({
             message: 'Recommendations generated',
             count: recommendations.length,
-            totalSavings: recommendations.reduce((sum, r) => sum + parseFloat(r.savings), 0).toFixed(2)
+            totalSavings: recommendations.reduce((sum, r) => sum + parseFloat(r.savings), 0).toFixed(2),
+            recommendations: recommendations.map(r => ({
+                type: r.type,
+                action: r.action,
+                savings: parseFloat(r.savings)
+            }))
         });
     } catch (error) {
         logger.error('Error generating recommendations', { error: error.message });
         res.status(500).json({ error: 'Failed to generate recommendations' });
+    }
+});
+
+/**
+ * @route   GET /api/v1/costs/alerts
+ * @desc    Get unread alerts
+ */
+router.get('/alerts', async (req, res) => {
+    try {
+        const userId = req.user?.id || 'demo-user-id';
+
+        const alerts = await alertSystem.getUnreadAlerts(userId);
+
+        res.json({ alerts });
+    } catch (error) {
+        logger.error('Error fetching alerts', { error: error.message });
+        res.status(500).json({ error: 'Failed to fetch alerts' });
+    }
+});
+
+/**
+ * @route   POST /api/v1/costs/alerts/:id/read
+ * @desc    Mark alert as read
+ */
+router.post('/alerts/:id/read', async (req, res) => {
+    try {
+        const userId = req.user?.id || 'demo-user-id';
+        const { id } = req.params;
+
+        await alertSystem.markAsRead(id, userId);
+
+        res.json({ message: 'Alert marked as read' });
+    } catch (error) {
+        logger.error('Error marking alert as read', { error: error.message });
+        res.status(500).json({ error: 'Failed to mark alert as read' });
     }
 });
 
