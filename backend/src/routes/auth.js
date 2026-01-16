@@ -3,12 +3,12 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { query } = require('../config/database');
 const logger = require('../utils/logger');
 
 /**
  * @route   POST /api/v1/auth/register
- * @desc    Register new user
- * @access  Public
+ * @desc    Register new user - REAL DATABASE
  */
 router.post(
     '/register',
@@ -18,7 +18,6 @@ router.post(
         body('name').trim().notEmpty()
     ],
     async (req, res) => {
-        // Validate input
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
@@ -27,17 +26,36 @@ router.post(
         try {
             const { email, password, name } = req.body;
 
-            // TODO: Check if user already exists in database
-            // TODO: Hash password with bcrypt
-            // TODO: Create user in database
-            // TODO: Generate JWT token
+            // Check if user exists
+            const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
+            if (existing.rows.length > 0) {
+                return res.status(400).json({ error: 'User already exists' });
+            }
 
-            // Placeholder response
-            logger.info('User registration attempted', { email });
+            // Hash password
+            const passwordHash = await bcrypt.hash(password, 10);
+
+            // Create user
+            const result = await query(
+                'INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3) RETURNING id, email, name',
+                [email, passwordHash, name]
+            );
+
+            const user = result.rows[0];
+
+            // Generate JWT
+            const token = jwt.sign(
+                { userId: user.id, email: user.email },
+                process.env.JWT_SECRET || 'local_development_secret',
+                { expiresIn: '7d' }
+            );
+
+            logger.info('User registered', { userId: user.id, email });
 
             res.status(201).json({
-                message: 'User registered successfully (TODO: implement database)',
-                user: { email, name }
+                message: 'User registered successfully',
+                token,
+                user: { id: user.id, email: user.email, name: user.name }
             });
         } catch (error) {
             logger.error('Registration error', { error: error.message });
@@ -48,8 +66,7 @@ router.post(
 
 /**
  * @route   POST /api/v1/auth/login
- * @desc    Login user
- * @access  Public
+ * @desc    Login user - REAL DATABASE
  */
 router.post(
     '/login',
@@ -66,24 +83,37 @@ router.post(
         try {
             const { email, password } = req.body;
 
-            // TODO: Find user in database
-            // TODO: Verify password
-            // TODO: Generate JWT token
+            // Find user
+            const result = await query(
+                'SELECT id, email, name, password_hash FROM users WHERE email = $1',
+                [email]
+            );
 
-            // Placeholder response
-            logger.info('Login attempted', { email });
+            if (result.rows.length === 0) {
+                return res.status(401).json({ error: 'Invalid credentials' });
+            }
 
-            // Mock JWT token for now
+            const user = result.rows[0];
+
+            // Verify password
+            const isValid = await bcrypt.compare(password, user.password_hash);
+            if (!isValid) {
+                return res.status(401).json({ error: 'Invalid credentials' });
+            }
+
+            // Generate JWT
             const token = jwt.sign(
-                { email },
-                process.env.JWT_SECRET || 'temporary_secret',
+                { userId: user.id, email: user.email },
+                process.env.JWT_SECRET || 'local_development_secret',
                 { expiresIn: '7d' }
             );
 
+            logger.info('User logged in', { userId: user.id, email });
+
             res.json({
-                message: 'Login successful (TODO: verify against database)',
+                message: 'Login successful',
                 token,
-                user: { email }
+                user: { id: user.id, email: user.email, name: user.name }
             });
         } catch (error) {
             logger.error('Login error', { error: error.message });
