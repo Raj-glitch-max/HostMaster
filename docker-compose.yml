@@ -52,7 +52,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: production_secret_change_this
-   ports:
+    ports:
       - "3000:3000"
     depends_on:
       postgres:
