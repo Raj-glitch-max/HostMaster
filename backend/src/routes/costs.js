@@ -4,15 +4,17 @@ const { query } = require('../config/database');
 const { cache } = require('../config/redis');
 const recommendationEngine = require('../services/recommendationEngine');
 const alertSystem = require('../services/alertSystem');
+const { verifyJWT } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
 /**
  * @route   GET /api/v1/costs
  * @desc    Get cost analysis - WITH CACHING AND ALERTS
+ * @access  Private (requires JWT)
  */
-router.get('/', async (req, res) => {
+router.get('/', verifyJWT, async (req, res) => {
     try {
-        const userId = req.user?.id || 'demo-user-id';
+        const userId = req.user.id; // ✅ FIXED: From JWT
 
         logger.info('Fetching cost analysis', { userId });
 
@@ -108,10 +110,11 @@ router.get('/', async (req, res) => {
 /**
  * @route   POST /api/v1/costs/generate-recommendations
  * @desc    Generate recommendations - REAL ML ENGINE
+ * @access  Private (requires JWT)
  */
-router.post('/generate-recommendations', async (req, res) => {
+router.post('/generate-recommendations', verifyJWT, async (req, res) => {
     try {
-        const userId = req.user?.id || 'demo-user-id';
+        const userId = req.user.id; // ✅ FIXED: From JWT
 
         logger.info('Generating recommendations', { userId });
 
@@ -139,10 +142,11 @@ router.post('/generate-recommendations', async (req, res) => {
 /**
  * @route   GET /api/v1/costs/alerts
  * @desc    Get unread alerts
+ * @access  Private (requires JWT)
  */
-router.get('/alerts', async (req, res) => {
+router.get('/alerts', verifyJWT, async (req, res) => {
     try {
-        const userId = req.user?.id || 'demo-user-id';
+        const userId = req.user.id; // ✅ FIXED: From JWT
 
         const alerts = await alertSystem.getUnreadAlerts(userId);
 
@@ -156,10 +160,11 @@ router.get('/alerts', async (req, res) => {
 /**
  * @route   POST /api/v1/costs/alerts/:id/read
  * @desc    Mark alert as read
+ * @access  Private (requires JWT)
  */
-router.post('/alerts/:id/read', async (req, res) => {
+router.post('/alerts/:id/read', verifyJWT, async (req, res) => {
     try {
-        const userId = req.user?.id || 'demo-user-id';
+        const userId = req.user.id; // ✅ FIXED: From JWT
         const { id } = req.params;
 
         await alertSystem.markAsRead(id, userId);

@@ -4,16 +4,17 @@ const { query } = require('../config/database');
 const { cache } = require('../config/redis');
 const AWSScanner = require('../services/awsScanner');
 const { addScanJob, getScanJobStatus } = require('../services/queue');
+const { verifyJWT } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
 /**
  * @route   GET /api/v1/resources
  * @desc    Get all AWS resources - WITH CACHING
- * @access  Private
+ * @access  Private (requires JWT)
  */
-router.get('/', async (req, res) => {
+router.get('/', verifyJWT, async (req, res) => {
     try {
-        const userId = req.user?.id || 'demo-user-id'; // TODO: Get from JWT middleware
+        const userId = req.user.id; // ✅ FIXED: Extracted from JWT token
 
         logger.info('Fetching AWS resources', { userId });
 
@@ -74,11 +75,11 @@ router.get('/', async (req, res) => {
 /**
  * @route   POST /api/v1/resources/scan
  * @desc    Trigger AWS scan - QUEUED via Bull
- * @access  Private
+ * @access  Private (requires JWT)
  */
-router.post('/scan', async (req, res) => {
+router.post('/scan', verifyJWT, async (req, res) => {
     try {
-        const userId = req.user?.id || 'demo-user-id';
+        const userId = req.user.id; // ✅ FIXED: From JWT
         const { accessKeyId, secretAccessKey, region } = req.body;
 
         if (!accessKeyId || !secretAccessKey) {
@@ -124,9 +125,9 @@ router.post('/scan', async (req, res) => {
 /**
  * @route   GET /api/v1/resources/scan/:jobId
  * @desc    Get scan job status
- * @access  Private
+ * @access  Private (requires JWT)
  */
-router.get('/scan/:jobId', async (req, res) => {
+router.get('/scan/:jobId', verifyJWT, async (req, res) => {
     try {
         const { jobId } = req.params;
 
