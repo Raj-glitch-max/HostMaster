@@ -5,6 +5,8 @@ const recommendationEngine = require('./services/recommendationEngine');
 const { query } = require('./config/database');
 const { decrypt } = require('./utils/encryption');
 const logger = require('./utils/logger');
+const emailService = require('./services/emailService');
+const slackService = require('./services/slackService');
 
 /**
  * Process AWS scan jobs
@@ -137,57 +139,110 @@ alertQueue.process(async (job) => {
 });
 
 /**
- * Send email alert (placeholder - integrate with SendGrid/AWS SES)
+ * Send email alert using SendGrid
  */
 async function sendEmailAlert(userId, title, message, level) {
-    // Get user email
-    const userResult = await query('SELECT email FROM users WHERE id = $1', [userId]);
-    const email = userResult.rows[0]?.email;
+    // Get user details
+    const userResult = await query(
+        'SELECT id, email, name FROM users WHERE id = $1',
+        [userId]
+    );
+    const user = userResult.rows[0];
 
-    if (!email) {
-        throw new Error('User email not found');
+    if (!user) {
+        throw new Error('User not found');
     }
 
-    // TODO: Integrate with SendGrid or AWS SES
-    logger.info('Email alert', { email, title, message, level });
+    // Create alert object
+    const alert = {
+        id: null, // Set if you have alert ID
+        title,
+        message,
+        level,
+        current_value: 0, // Update with real value if available
+        threshold: 0 // Update with real threshold if available
+    };
 
-    // For now, just log
-    console.log(`
-    ========================================
-    EMAIL ALERT (${level})
-    To: ${email}
-    Subject: ${title}
-    Message: ${message}
-    ========================================
-  `);
+    try {
+        const result = await emailService.sendCostAlert(user, alert);
+
+        if (result.success) {
+            logger.info('Email alert sent successfully', {
+                userId,
+                email: user.email,
+                messageId: result.messageId
+            });
+        } else {
+            logger.error('Email alert failed to send', {
+                userId,
+                email: user.email,
+                reason: result.reason || result.error
+            });
+        }
+
+        return result;
+    } catch (error) {
+        logger.error('Email alert error', {
+            userId,
+            error: error.message
+        });
+        throw error;
+    }
 }
 
 /**
- * Send Slack alert (placeholder - integrate with Slack webhook)
+ * Send Slack alert using webhook
  */
 async function sendSlackAlert(userId, title, message, level) {
     // Get user's Slack webhook URL
     const userResult = await query(
-        'SELECT slack_webhook_url FROM users WHERE id = $1',
+        'SELECT id, name, slack_webhook_url FROM users WHERE id = $1',
         [userId]
     );
-    const webhookUrl = userResult.rows[0]?.slack_webhook_url;
+    const user = userResult.rows[0];
 
-    if (!webhookUrl) {
+    if (!user || !user.slack_webhook_url) {
         logger.warn('No Slack webhook configured', { userId });
-        return;
+        return { success: false, reason: 'no_webhook' };
     }
 
-    // TODO: Post to Slack webhook
-    logger.info('Slack alert', { userId, title, message, level });
+    // Create alert object
+    const alert = {
+        id: null,
+        title,
+        message,
+        level,
+        current_value: 0, // Update with real value if available
+        threshold: 0 // Update with real threshold if available
+    };
 
-    console.log(`
-    ========================================
-    SLACK ALERT (${level})
-    Title: ${title}
-    Message: ${message}
-    ========================================
-  `);
+    try {
+        const result = await slackService.sendCostAlert(
+            user.slack_webhook_url,
+            alert,
+            user
+        );
+
+        if (result.success) {
+            logger.info('Slack alert sent successfully', {
+                userId,
+                attempt: result.attempt
+            });
+        } else {
+            logger.error('Slack alert failed to send', {
+                userId,
+                reason: result.reason || result.error
+            });
+        }
+
+        return result;
+    } catch (error) {
+        logger.error('Slack alert error', {
+            userId,
+            error: error.message
+        });
+        throw error;
+    }
 }
 
 /**

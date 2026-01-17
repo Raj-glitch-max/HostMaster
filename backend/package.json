@@ -21,8 +21,10 @@
   "author": "Raj",
   "license": "MIT",
   "dependencies": {
+    "@sendgrid/mail": "^8.1.0",
     "@sentry/node": "^10.34.0",
     "aws-sdk": "^2.1500.0",
+    "axios": "^1.7.9",
     "bcryptjs": "^2.4.3",
     "bull": "^4.16.5",
     "cors": "^2.8.5",
