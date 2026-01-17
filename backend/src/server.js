@@ -7,6 +7,14 @@ require('dotenv').config();
 const logger = require('./utils/logger');
 const errorHandler = require('./middleware/errorHandler');
 
+// ✅ CRITICAL FIX: Start Bull workers (Blocker #3)
+// In production, run workers in separate processes with: npm run worker
+// For development, workers run inline with API server
+if (process.env.NODE_ENV !== 'production' || process.env.START_WORKERS === 'true') {
+    require('./worker');
+    logger.info('✅ Bull workers started (scan queue + alert queue)');
+}
+
 // Import routes
 const authRoutes = require('./routes/auth');
 const resourceRoutes = require('./routes/resources');
