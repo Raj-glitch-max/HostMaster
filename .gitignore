@@ -1,62 +1,60 @@
-# Node modules
+# Dependencies
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
 .pnpm-debug.log*
 
-# Environment variables
+# Environment Variables
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+backend/.env
+frontend/.env.local
 
-# AWS Credentials and Keys
-keys/
+# Secrets & Keys
 *.pem
 *.key
-*_accessKeys.csv
-*_credentials.csv
-aws-credentials.json
-
-# Terraform
-*.tfstate
-*.tfstate.*
+*.crt
+*.p12
+*.pfx
+.aws/
 .terraform/
-.terraform.lock.hcl
-terraform.tfvars
-*.auto.tfvars
-
-# IDE and Editor
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
+terraform.tfstate
+terraform.tfstate.backup
+*.tfvars
+!example.tfvars
 
 # Build outputs
 dist/
 build/
-out/
 .next/
-.cache/
-
-# Logs
-logs/
+out/
+coverage/
 *.log
 
-# Testing
-coverage/
-.nyc_output/
-
-# OS
-Thumbs.db
+# OS files
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
 
-# Sensitive documentation (if any)
-# internal-notes.md
+# IDE
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Testing
+.nyc_output/
+coverage/
+
+# Docker
+*.tar
 
 # Temporary files
 tmp/
@@ -64,18 +62,29 @@ temp/
 *.tmp
 
 # Database
-*.db
 *.sqlite
-*.sqlite3
+*.db
+*.sql.gz
+backups/
 
-# Secrets
-secrets.yaml
-secrets.json
+# Documentation (internal only - not for public)
+doc/01-fundamentals/
+doc/02-backend/
+doc/03-frontend/
+doc/04-cloud/
+doc/05-cicd/
+doc/06-security/
+doc/07-monitoring/
+doc/08-testing/
+doc/architecture/
+doc/setup/
+doc/features/
+doc/*.md
+!doc/README.md
 
-# Docker
-.dockerignore
-docker-compose.override.yml
-
-# Personal notes
-PERSONAL_NOTES.md
-TODO_PRIVATE.md
+# Audit & internal planning docs
+*_Audit.md
+PERPLEXITY*.md
+gap-analysis.md
+security-report.md
+implementation-plan.md

@@ -1,0 +1,32 @@
+#!/bin/bash
+#
+# Git Pre-Push Hook - Runs Tests Before Pushing
+# 
+# This runs on YOUR computer (100% FREE - no GitHub charges!)
+# Automatically tests code before it gets pushed to GitHub
+#
+
+echo "🧪 Running tests before push..."
+
+cd backend || exit 1
+
+# Check if node_modules exists
+if [ ! -d "node_modules" ]; then
+    echo "⚠️  node_modules not found. Run 'npm install' first."
+    exit 1
+fi
+
+# Run tests
+npm test --silent
+
+if [ $? -eq 0 ]; then
+    echo "✅ All tests passed! Proceeding with push..."
+    exit 0
+else
+    echo ""
+    echo "❌ Tests failed! Push cancelled."
+    echo ""
+    echo "Fix the failing tests and try again."
+    echo "Or use 'git push --no-verify' to skip tests (not recommended)."
+    exit 1
+fi
