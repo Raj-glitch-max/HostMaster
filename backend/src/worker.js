@@ -3,40 +3,38 @@ const AWSScanner = require('./services/awsScanner');
 const alertSystem = require('./services/alertSystem');
 const recommendationEngine = require('./services/recommendationEngine');
 const { query } = require('./config/database');
+const { decrypt } = require('./utils/encryption');
 const logger = require('./utils/logger');
 
 /**
  * Process AWS scan jobs
  */
 scanQueue.process(async (job) => {
-    const { accountId, userId } = job.data;
+    const { accountId, userId, accessKeyId, secretAccessKey, region } = job.data;
 
-    logger.info('Processing scan job', { jobId: job.id, accountId });
+    logger.info('Processing scan job', { jobId: job.id, accountId, userId });
 
     try {
         // Update job progress
         job.progress(10);
 
-        // Get account credentials from database
-        const accountResult = await query(
-            `SELECT aws_access_key_encrypted, aws_secret_key_encrypted, aws_region
-       FROM accounts WHERE id = $1`,
-            [accountId]
+        // ✅ CRITICAL FIX: Decrypt AWS credentials from job data
+        logger.info('Decrypting AWS credentials', { userId });
+
+        const decryptedAccessKey = decrypt(accessKeyId);
+        const decryptedSecretKey = decrypt(secretAccessKey);
+
+        logger.info('AWS credentials decrypted successfully', {
+            userId,
+            accessKeyLength: decryptedAccessKey.length
+        });
+
+        // Initialize AWS scanner with DECRYPTED credentials
+        const scanner = new AWSScanner(
+            decryptedAccessKey,
+            decryptedSecretKey,
+            region || 'us-east-1'
         );
-
-        if (accountResult.rows.length === 0) {
-            throw new Error('Account not found');
-        }
-
-        const account = accountResult.rows[0];
-
-        // TODO: Decrypt credentials (add encryption later)
-        const accessKey = account.aws_access_key_encrypted;
-        const secretKey = account.aws_secret_key_encrypted;
-        const region = account.aws_region || 'us-east-1';
-
-        // Initialize AWS scanner
-        const scanner = new AWSScanner(accessKey, secretKey, region);
 
         job.progress(20);
 

@@ -5,6 +5,7 @@ const { cache } = require('../config/redis');
 const AWSScanner = require('../services/awsScanner');
 const { addScanJob, getScanJobStatus } = require('../services/queue');
 const { verifyJWT } = require('../middleware/auth');
+const { encrypt } = require('../utils/encryption');
 const logger = require('../utils/logger');
 
 /**
@@ -88,6 +89,16 @@ router.post('/scan', verifyJWT, async (req, res) => {
 
         logger.info('Triggering AWS scan', { userId, region });
 
+        // ✅ CRITICAL FIX: Encrypt AWS credentials before storage
+        const encryptedAccessKey = encrypt(accessKeyId);
+        const encryptedSecretKey = encrypt(secretAccessKey);
+
+        logger.info('AWS credentials encrypted', {
+            userId,
+            originalAccessKeyLength: accessKeyId.length,
+            encryptedAccessKeyLength: encryptedAccessKey.length
+        });
+
         // Create scan job record
         const scanJobResult = await query(
             `INSERT INTO scan_jobs (user_id, status) 
@@ -98,12 +109,12 @@ router.post('/scan', verifyJWT, async (req, res) => {
 
         const scanJobId = scanJobResult.rows[0].id;
 
-        // Queue the scan job
+        // Queue the scan job with ENCRYPTED credentials
         const job = await addScanJob(userId, {
             userId,
             accountId: userId, // Simplified - in real app, separate account table
-            accessKeyId,
-            secretAccessKey,
+            accessKeyId: encryptedAccessKey, // ✅ ENCRYPTED
+            secretAccessKey: encryptedSecretKey, // ✅ ENCRYPTED
             region: region || 'us-east-1',
             scanJobId
         });
