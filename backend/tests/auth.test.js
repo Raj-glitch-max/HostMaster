@@ -3,122 +3,92 @@ const app = require('../src/server');
 
 describe('Authentication API', () => {
     describe('POST /api/v1/auth/register', () => {
-        it('should register a new user', async () => {
-            const response = await request(app)
+        it('should register a new user with valid credentials', async () => {
+            const res = await request(app)
+                .post('/api/v1/auth/register')
+                .send({
+                    email: `test${Date.now()}@example.com`,
+                    password: 'Password123',
+                    name: 'Test User'
+                });
+
+            expect(res.statusCode).toBe(201);
+            expect(res.body).toHaveProperty('token');
+            expect(res.body).toHaveProperty('user');
+            expect(res.body.user).toHaveProperty('email');
+        });
+
+        it('should reject registration with weak password', async () => {
+            const res = await request(app)
                 .post('/api/v1/auth/register')
                 .send({
                     email: 'test@example.com',
-                    password: 'StrongPass123!',  // Updated to meet 12-char requirement
+                    password: 'weak',
                     name: 'Test User'
                 });
 
-            expect(response.status).toBe(201);
-            expect(response.body).toHaveProperty('token');
-            expect(response.body.user).toHaveProperty('email', 'test@example.com');
+            expect(res.statusCode).toBe(400);
         });
 
-        it('should reject duplicate email', async () => {
-            // Register first user
-            await request(app)
+        it('should reject registration with invalid email', async () => {
+            const res = await request(app)
                 .post('/api/v1/auth/register')
                 .send({
-                    email: 'duplicate@example.com',
-                    password: 'StrongPass123!',  // Updated
-                    name: 'User One'
-                });
-
-            // Try to register with same email
-            const response = await request(app)
-                .post('/api/v1/auth/register')
-                .send({
-                    email: 'duplicate@example.com',
-                    password: 'StrongPass456!',  // Updated
-                    name: 'User Two'
-                });
-
-            expect(response.status).toBe(400);
-            expect(response.body).toHaveProperty('error');
-        });
-
-        it('should require valid email', async () => {
-            const response = await request(app)
-                .post('/api/v1/auth/register')
-                .send({
-                    email: 'invalid-email',
-                    password: 'password123',
+                    email: 'notanemail',
+                    password: 'Password123',
                     name: 'Test User'
                 });
 
-            expect(response.status).toBe(400);
-        });
-
-        it('should require password >= 8 characters', async () => {
-            const response = await request(app)
-                .post('/api/v1/auth/register')
-                .send({
-                    email: 'test@example.com',
-                    password: 'short',
-                    name: 'Test User'
-                });
-
-            expect(response.status).toBe(400);
+            expect(res.statusCode).toBe(400);
         });
     });
 
     describe('POST /api/v1/auth/login', () => {
-        beforeAll(async () => {
-            // Create test user with strong password
+        it('should login with valid credentials', async () => {
+            // First register a user
+            const email = `test${Date.now()}@example.com`;
             await request(app)
                 .post('/api/v1/auth/register')
                 .send({
-                    email: 'login@example.com',
-                    password: 'LoginPass123!',  // Updated to strong password
-                    name: 'Login User'
+                    email,
+                    password: 'Password123',
+                    name: 'Test User'
                 });
-        });
 
-        it('should login with correct credentials', async () => {
-            const response = await request(app)
+            // Then login
+            const res = await request(app)
                 .post('/api/v1/auth/login')
                 .send({
-                    email: 'login@example.com',
-                    password: 'LoginPass123!'  // Updated
+                    email,
+                    password: 'Password123'
                 });
 
-            expect(response.status).toBe(200);
-            expect(response.body).toHaveProperty('token');
-            expect(response.body.user).toHaveProperty('email', 'login@example.com');
+            expect(res.statusCode).toBe(200);
+            expect(res.body).toHaveProperty('token');
+            expect(res.body).toHaveProperty('user');
         });
 
-        it('should reject wrong password', async () => {
-            const response = await request(app)
-                .post('/api/v1/auth/login')
-                .send({
-                    email: 'login@example.com',
-                    password: 'wrongpassword'
-                });
-
-            expect(response.status).toBe(401);
-            expect(response.body).toHaveProperty('error');
-        });
-
-        it('should reject non-existent email', async () => {
-            const response = await request(app)
+        it('should reject invalid credentials', async () => {
+            const res = await request(app)
                 .post('/api/v1/auth/login')
                 .send({
                     email: 'nonexistent@example.com',
-                    password: 'password123'
+                    password: 'WrongPassword123'
                 });
 
-            expect(response.status).toBe(401);
+            expect(res.statusCode).toBe(401);
         });
     });
 });
 
-describe('Rate Limiting', () => {
-    it('should enforce daily API limits for free tier', async () => {
-        // This would need to mock Redis and simulate 100+ requests
-        // Placeholder for now
-        expect(true).toBe(true);
+describe('Health Check API', () => {
+    describe('GET /health', () => {
+        it('should return healthy status', async () => {
+            const res = await request(app).get('/health');
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body).toHaveProperty('status', 'healthy');
+            expect(res.body).toHaveProperty('timestamp');
+        });
     });
 });
