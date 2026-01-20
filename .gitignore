@@ -68,19 +68,9 @@ temp/
 backups/
 
 # Documentation (internal only - not for public)
-doc/01-fundamentals/
-doc/02-backend/
-doc/03-frontend/
-doc/04-cloud/
-doc/05-cicd/
-doc/06-security/
-doc/07-monitoring/
-doc/08-testing/
-doc/architecture/
-doc/setup/
-doc/features/
-doc/*.md
-!doc/README.md
+doc/
+docs/
+ui/
 
 # Audit & internal planning docs
 *_Audit.md

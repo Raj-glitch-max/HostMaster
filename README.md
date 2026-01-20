@@ -1,377 +1,275 @@
 # HostMaster 🚀
 
-> **AWS cost optimization made simple.** Stop overspending on cloud infrastructure.
+> **AWS Cost Optimization Platform** - Learning project demonstrating full-stack development with AWS integration.
 
-HostMaster is a production-ready SaaS platform that automatically analyzes your AWS resources, identifies cost-saving opportunities, and helps you optimize your cloud spending without compromising performance.
+A development-stage SaaS platform that analyzes AWS resources and provides cost-saving recommendations. Built to demonstrate full-stack development, DevOps practices, and cloud infrastructure skills.
 
-[![Production Ready](https://img.shields.io/badge/production-ready-green.svg)](https://github.com/Raj-glitch-max/HostMaster)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-
----
-
-## Why HostMaster?
-
-Most AWS cost optimization tools are built for enterprises with hefty $300-500/month price tags. **HostMaster changes that.**
-
-- 🎯 **For teams spending $5K-50K/month** on AWS who can't justify enterprise tools
-- ⚡ **5-minute setup** vs weeks of configuration
-- 💰 **$29/month** vs $450/month competitors
-- 🔒 **Your credentials, your data** - read-only AWS access, zero data sharing
-
-**Real impact:** Our beta users save an average of **18% on AWS bills** within the first month.
+[![Development Stage](https://img.shields.io/badge/status-development-yellow.svg)](https://github.com/Raj-glitch-max/HostMaster)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 ---
 
-## Features
+## 🎯 Project Overview
 
-### 🔍 Automated Resource Discovery
-Scan your entire AWS infrastructure (EC2, RDS, S3, Lambda) in minutes. No manual inventory needed.
+HostMaster is a learning project built to master:
+- Full-stack development (Next.js + Node.js)
+- AWS API integration (EC2, RDS, Cost Explorer)
+- Background job processing (Bull + Redis)
+- DevOps practices (Docker, CI/CD)
+- Database design & optimization
+- Security best practices
 
-### 💡 Smart Recommendations
-Machine learning-powered suggestions for:
-- Right-sizing instances (currently paying for t3.large, only using 20% CPU)
-- Unused resources (that stopped instance still costs $120/month)
-- Reserved Instance opportunities (save 40% on predictable workloads)
-- Storage optimization (EBS volumes, S3 lifecycle policies)
+## ✅ What Actually Works
 
-### 📊 Cost Analysis Dashboard
-Beautiful, real-time visualization of where your money goes:
-- Cost trends over time
-- Breakdown by service, region, and resource
-- Budget alerts before you overspend
+### Core Features (Functional)
+- ✅ **User Authentication** - JWT-based registration and login
+- ✅ **AWS Resource Scanning** - Fetches EC2 and RDS instances via AWS SDK
+- ✅ **Cost Tracking** - Stores and displays historical cost data
+- ✅ **Recommendations Engine** - Rule-based cost optimization suggestions
+- ✅ **Alert System** - Budget threshold monitoring with database alerts
+- ✅ **Dashboard UI** - Real-time cost visualizations and charts
+- ✅ **Background Workers** - Bull queue for async AWS scanning
 
-### ⚠️ Intelligent Alerts
-Get notified when:
-- Monthly costs exceed budget by 10% (Warning) or 30% (Critical)
-- Expensive resources are left running (>$500/month)
-- Recommendations could save >$1K/month
+### What's Implemented (But Needs Testing)
+- ⚠️ **Background job processing** - Configured but not stress-tested
+- ⚠️ **Email/Slack alerts** - Code exists but requires API keys
+- ⚠️ **Report generation** - PDF creation implemented
 
-### 🔄 Background Automation
-- Scans run every 4 hours (configurable)
-- Cost data updated daily from AWS Cost Explorer
-- Recommendations regenerated weekly
+### What's NOT Implemented
+- ❌ **Production deployment** - Terraform config exists but not deployed
+- ❌ **Prometheus/Grafana** - Metrics endpoint exists, no visualization
+- ❌ **Sentry error tracking** - Package installed, not configured
+- ❌ **Comprehensive testing** - Basic Jest setup, minimal coverage
+- ❌ **SMS alerts** - Placeholder only
 
 ---
 
-## Tech Stack
-
-**Backend:**
-- Node.js 20 + Express.js (REST API)
-- PostgreSQL 15 (primary database)
-- Redis 7 (caching + rate limiting)
-- Bull (background job queue)
+## 🛠 Technology Stack
 
 **Frontend:**
-- Next.js 14 (React framework)
-- TailwindCSS (styling)
-- Recharts (data visualization)
+- Next.js 14 (TypeScript)
+- TailwindCSS
+- Recharts for visualizations
 
-**Infrastructure:**
-- Docker + Docker Compose (local development)
-- AWS ECS (production deployment)
-- Terraform (infrastructure as code)
-- GitHub Actions (CI/CD)
+**Backend:**
+- Node.js 20 + Express.js
+- PostgreSQL 15 (primary database)
+- Redis 7 (queue + cache)
+- Bull (background jobs)
 
-**Monitoring:**
-- Prometheus (metrics)
-- Grafana (dashboards)
-- Sentry (error tracking)
+**AWS Integration:**
+- AWS SDK v2 (EC2, RDS, Cost Explorer APIs)
+
+**DevOps:**
+- Docker & Docker Compose
+- GitHub Actions (CI/CD configured)
+- Terraform (IaC configuration)
+- PM2 (process management)
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
+- Node.js 20+
 - Docker & Docker Compose
-- AWS account (read-only credentials)
-- Node.js 20+ (for local development)
+- AWS account with API credentials (for scanning)
 
-### 1. Clone the repository
+### 1. Clone Repository
 ```bash
 git clone https://github.com/Raj-glitch-max/HostMaster.git
 cd HostMaster
 ```
 
-### 2. Set up environment variables
+### 2. Environment Setup
 ```bash
+# Backend
 cp backend/.env.example backend/.env
-# Edit backend/.env with your database credentials and JWT secret
+# Edit backend/.env with your configuration
+
+# Frontend
+cp frontend/.env.example frontend/.env
 ```
 
-### 3. Start the stack
+### 3. Start Services
 ```bash
-docker-compose up -d
+# Start database and cache
+docker-compose up -d postgres redis
+
+# Install dependencies
+cd backend && npm install
+cd ../frontend && npm install
+
+# Start backend
+cd backend && npm run dev
+
+# Start frontend (in new terminal)
+cd frontend && npm run dev
 ```
 
-This starts:
-- PostgreSQL (port 5432)
-- Redis (port 6379)
-- Backend API (port 3000)
-- Frontend (port 3001)
-- Background Worker
+### 4. Access Application
+- Frontend: http://localhost:3001
+- Backend API: http://localhost:3000
+- API Health: http://localhost:3000/health
 
-### 4. Initialize the database
-```bash
-docker exec hostmaster-postgres psql -U postgres -d hostmaster_dev -f /docker-entrypoint-initdb.d/schema.sql
-```
-
-### 5. Open the app
-Visit `http://localhost:3001` and create an account.
+### 5. Demo Login
+For testing with seed data:
+- Email: `demo@hostmaster.io`
+- Password: `password`
 
 ---
 
-## Configuration
+## 📊 Database Schema
 
-### Pricing Tiers
+Key tables:
+- `users` - User accounts with encrypted AWS credentials
+- `aws_resources` - Discovered EC2/RDS instances
+- `cost_history` - Monthly cost tracking by service
+- `recommendations` - Generated cost-saving suggestions
+- `scan_jobs` - Background scan job tracking
+- `alerts` - Budget and resource alerts
 
-| Feature | Free | Professional | Enterprise |
-|---------|------|-------------|------------|
-| **Price** | $0 | $29/month | $199/month |
-| **AWS Accounts** | 1 | 5 | Unlimited |
-| **Scans** | 1/day | Every 4 hours | Hourly |
-| **API Calls** | 100/day | 10,000/day | 100,000/day |
-| **Alerts** | Dashboard only | Email + Slack | Email + Slack + SMS |
-| **Support** | Community | Email | Priority + Phone |
-
-### Environment Variables
-
-**Backend** (`backend/.env`):
-```env
-# Database
-DB_HOST=postgres
-DB_PORT=5432
-DB_NAME=hostmaster_dev
-DB_USER=postgres
-DB_PASSWORD=your_secure_password
-
-# Redis
-REDIS_HOST=redis
-REDIS_PORT=6379
-
-# JWT
-JWT_SECRET=your_super_secret_key_min_32_chars
-JWT_EXPIRE=7d
-
-# AWS (for scanning user accounts - optional for testing)
-AWS_REGION=us-east-1
-
-# Monitoring
-SENTRY_DSN=your_sentry_dsn_optional
-```
+See `backend/database/schema.sql` for details.
 
 ---
 
-## API Documentation
+## 🔧 API Endpoints
 
 ### Authentication
-```bash
-# Register
-curl -X POST http://localhost:3000/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"SecurePass123!","name":"John Doe"}'
+- `POST /api/v1/auth/register` - Create new account
+- `POST /api/v1/auth/login` - Get JWT token
 
-# Login
-curl -X POST http://localhost:3000/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"SecurePass123!"}'
-```
+### Resources
+- `GET /api/v1/resources` - List all AWS resources
+- `POST /api/v1/resources/scan` - Trigger AWS scan
 
-### Scan AWS Account
-```bash
-curl -X POST http://localhost:3000/api/v1/resources/scan \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "accessKeyId": "AKIA...",
-    "secretAccessKey": "...",
-    "region": "us-east-1"
-  }'
-```
+### Costs
+- `GET /api/v1/costs` - Get cost data and forecasts
 
-### Get Cost Analysis
-```bash
-curl http://localhost:3000/api/v1/costs \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
-```
+### Recommendations
+- `GET /api/v1/recommendations` - Get cost-saving suggestions
+- `PATCH /api/v1/recommendations/:id/dismiss` - Dismiss recommendation
 
-**Full API docs:** `http://localhost:3000/api-docs` (Swagger UI when running locally)
+### Alerts
+- `GET /api/v1/alerts` - Get user alerts
+- `PATCH /api/v1/alerts/:id/read` - Mark alert as read
+- `DELETE /api/v1/alerts/:id` - Delete alert
 
 ---
 
-## Architecture
+## 🏗 Architecture
 
 ```
 ┌─────────────┐
-│   Frontend  │ (Next.js)
-│  Port 3001  │
+│  Next.js    │ ← Frontend (port 3001)
+│  Dashboard  │
 └──────┬──────┘
-       │ HTTP
-       ↓
-┌─────────────┐      ┌──────────┐
-│  Backend    │◄────►│  Redis   │ (Caching)
-│  Port 3000  │      └──────────┘
-└──────┬──────┘
-       │
-       ├──────► PostgreSQL (User data, resources, costs)
-       │
-       └──────► Bull Queue ──► Background Worker
-                                    │
-                                    ↓
-                              AWS Cost Explorer
-                              EC2, RDS, S3 APIs
+       │ REST API
+┌──────▼──────┐
+│  Express.js │ ← Backend API (port 3000)
+│  API Server │
+└──┬────┬─────┘
+   │    │
+   │    └─────────┐
+   │              │
+┌──▼───┐    ┌────▼────┐
+│ Bull │    │  AWS    │
+│Queue │    │   SDK   │
+└──────┘    └─────────┘
+   │
+┌──▼──┐
+│Redis│
+└─────┘
+   │
+┌──▼────────┐
+│PostgreSQL │
+└───────────┘
 ```
-
-**Design Decisions:**
-- **PostgreSQL** for atomic transactions (billing data can't be wrong)
-- **Redis** for sub-10ms dashboard loads (cache user dashboards)
-- **Bull + Redis** for reliable background jobs (scans must not fail)
-- **Read-only AWS access** for security (we never modify your infrastructure)
 
 ---
 
-## Development
+## 🔐 Security Features
 
-### Running tests
+- JWT authentication with 7-day expiry
+- Bcrypt password hashing (12 rounds)
+- AES-256 encryption for AWS credentials
+- Parameterized SQL queries (injection prevention)
+- Helmet.js security headers
+- CORS configuration
+- Rate limiting (basic implementation)
+
+---
+
+## 🧪 Development Status
+
+**Completion: ~60%**
+
+**Working:**
+- Core CRUD operations
+- AWS API integration (EC2, RDS, Cost Explorer)
+- Background job processing
+- User authentication
+- Dashboard with real data
+
+**In Progress:**
+- Comprehensive testing
+- Production deployment
+- Monitoring setup
+
+**Planned:**
+- S3 and Lambda scanning
+- Advanced recommendations with CloudWatch metrics
+- Multi-account support
+- Cost forecasting improvements
+
+---
+
+## 📝 Testing
+
 ```bash
 cd backend
-npm test                  # Run all tests
-npm test -- --coverage    # With coverage report
-npm test -- --watch       # Watch mode
+npm test
 ```
 
-### Database migrations
-```bash
-# Create migration
-npm run migrate:create add_new_column
-
-# Run migrations
-npm run migrate:up
-
-# Rollback
-npm run migrate:down
-```
-
-### Linting
-```bash
-npm run lint              # Check for issues
-npm run lint:fix          # Auto-fix issues
-```
+Note: Test coverage is currently minimal. Expanding test suite is a priority.
 
 ---
 
-## Deployment
+## 🎓 Learning Outcomes
 
-### Using Docker (Recommended)
-```bash
-# Build images
-docker-compose -f docker-compose.prod.yml build
-
-# Deploy
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-### Using Terraform (AWS)
-```bash
-cd terraform
-terraform init
-terraform plan
-terraform apply
-
-# Outputs your ALB DNS name
-```
-
-**Production checklist:**
-- [ ] Set strong `JWT_SECRET` (32+ random characters)
-- [ ] Enable HTTPS (handled by AWS ALB)
-- [ ] Configure Sentry for error tracking
-- [ ] Set up database backups (daily)
-- [ ] Configure CloudWatch alarms
-- [ ] Enable rate limiting (default: 100/day free tier)
+This project taught me:
+- **AWS SDK integration** - EC2, RDS, Cost Explorer APIs
+- **Background job processing** - Bull queues, Redis
+- **Full-stack architecture** - Separation of concerns, API design
+- **Database design** - PostgreSQL schema with JSONB
+- **DevOps practices** - Docker containerization, CI/CD
+- **Security fundamentals** - Encryption, authentication
+- **TypeScript** - Type-safe frontend development
 
 ---
 
-## Security
+## 🤝 Contributing
 
-**We take security seriously:**
-- ✅ **Read-only AWS access** (we never modify your infrastructure)
-- ✅ **AES-256 encryption** for AWS credentials at rest
-- ✅ **JWT authentication** with 7-day expiry
-- ✅ **Account lockout** after 5 failed login attempts
-- ✅ **Rate limiting** to prevent abuse
-- ✅ **SQL injection protection** (parameterized queries)
-- ✅ **XSS protection** (input sanitization)
-
-**Found a vulnerability?** Please report it responsibly: [SECURITY.md](SECURITY.md)
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
-## Contributing
+## 📄 License
 
-We welcome contributions! Whether it's:
-- 🐛 Bug fixes
-- ✨ New features
-- 📝 Documentation improvements
-- 🧪 Test coverage
-
-**See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.**
+Apache License 2.0 - See [LICENSE](LICENSE) for details.
 
 ---
 
-## Roadmap
+## 🙏 Acknowledgments
 
-**Q1 2026** (Current)
-- [x] Core AWS resource scanning (EC2, RDS, S3)
-- [x] Cost analysis dashboard
-- [x] Basic recommendations engine
-- [ ] Email alerts
-- [ ] Terraform cost estimation
-
-**Q2 2026**
-- [ ] Multi-cloud support (Azure, GCP)
-- [ ] Team collaboration features
-- [ ] Advanced ML recommendations
-- [ ] Mobile app (iOS, Android)
-
-**Q3 2026**
-- [ ] Kubernetes cost optimization
-- [ ] Carbon footprint tracking
-- [ ] Budget forecasting (ML-based)
+- Built as a learning project to demonstrate full-stack + DevOps skills
+- Inspired by enterprise AWS cost management tools
+- Not affiliated with AWS
 
 ---
 
-## License
+## 📧 Contact
 
-MIT License - see [LICENSE](LICENSE) file for details.
-
----
-
-## Support
-
-- 📧 **Email:** support@hostmaster.io
-- 💬 **Discord:** [Join our community](https://discord.gg/hostmaster)
-- 🐦 **Twitter:** [@HostMasterHQ](https://twitter.com/HostMasterHQ)
-- 📚 **Docs:** [docs.hostmaster.io](https://docs.hostmaster.io)
-
----
-
-## Acknowledgments
-
-Built with ❤️ by developers tired of overpaying for AWS.
-
-**Inspired by:** The frustration of seeing $10K AWS bills and not knowing where the money goes.
-
-**Special thanks to:**
-- The open-source community
-- Our beta testers who saved over $150K combined in Q4 2025
-- AWS for making cloud computing accessible (even if expensive)
-
----
-
-<div align="center">
-  
-**Star ⭐ this repo if HostMaster saved you money!**
-
-[Get Started](https://hostmaster.io) · [View Demo](https://demo.hostmaster.io) · [Report Bug](https://github.com/Raj-glitch-max/HostMaster/issues)
-
-</div>
+For questions or feedback about this project:
+- GitHub: [@Raj-glitch-max](https://github.com/Raj-glitch-max)
+- Project: [HostMaster](https://github.com/Raj-glitch-max/HostMaster)
